@@ -76,20 +76,21 @@ WantedBy=multi-user.target
 
 Below is a copy-paste-ready command one could run that generates a default
 configuration with scanpi cloned to /opt/scanpi and scans are saved to
-`/mnt/scan` and the root path is `/`:
+`/mnt/scan` and the root path is `/`. Below should be run as root.
 
 ```bash
-sudo mkdir -p /mnt/scan
-sudo git clone https://github.com/nuvious/scanpi.git /opt/scanpi
-sudo touch /lib/systemd/system/scanpi.service
-sudo cat > /lib/systemd/system/scanpi.service << EOF
+set -e # Stop on any error
+mkdir -p /mnt/scan
+git clone https://github.com/nuvious/scanpi.git /opt/scanpi
+touch /lib/systemd/system/scanpi.service
+cat > /lib/systemd/system/scanpi.service << EOF
 [Unit]
 Description=ScanPi Python Application
 After=network.target
 
 [Service]
-WorkingDirectory=/opt/scanpi/scanpi
-ExecStart=/usr/bin/python3 /opt/scanpi/scanpi/app.py
+WorkingDirectory=/opt/scanpi
+ExecStart=/usr/bin/python3 /opt/scanpi/app.py
 Restart=always
 RestartSec=30
 User=root
@@ -99,7 +100,7 @@ Group=root
 WantedBy=multi-user.target
 EOF
 # Edit accordingly if desired to add environment variables.
-sudo systemctl enable scanpi --now
+systemctl enable scanpi --now
 ```
 
 ## Tested Hardware
