@@ -9,6 +9,10 @@ life.
 Current implementation does not have authentication. Issue #1 is earmarked for
 implementation of authentication, ideally without requiring any registration.
 
+## Demo
+
+[![ScanPi Video Demo](http://img.youtube.com/vi/9Ftn02hEa44/0.jpg)](http://www.youtube.com/watch?v=9Ftn02hEa44 "ScanPi Video Demo")
+
 ## Quickstart
 
 First install flask, scanadf and ocrmypdf. The application needs to run as root
