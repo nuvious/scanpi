@@ -119,6 +119,8 @@ services:
     # Environment variables can be added below, uncomment and add them if you need them
     #environment:
     # - 
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0 # replace this with the actual device (aka your scanner) you want to map
 ```
 
 ## Tested Hardware
