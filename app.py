@@ -55,9 +55,9 @@ def root_path():
     try:
         if request.method == 'POST':
             # Extract form data
-            name = f'{request.form['date']}-{request.form['name']}'
+            name = f"{request.form['date']}-{request.form['name']}"
             mode = request.form['mode']
-            resolution = f'{int(request.form['resolution'])}dpi'
+            resolution = f"{int(request.form['resolution'])}dpi"
             source = request.form['source']
             env_vars = os.environ.copy()
             env_vars["FILENAME"] = name
