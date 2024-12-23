@@ -24,14 +24,40 @@ sudo apt update
 sudo apt install scanadf ocrmypdf -y
 ```
 
-Next launch the app.
+Next, create a configuration file `config.yaml` in either the directory the app
+will be launched, `~/.config/scanpi/` of the user that the app will be run
+under, or `/etc/scanpi/`.
+
+```yaml
+debug: false
+root_path: /
+sources: 
+- ADF Front
+- ADF Back
+- ADF Duplex
+modes:
+- Gray
+- Halftone
+- Color
+- Lineart
+resolutions:
+- 100
+- 200
+- 300
+- 400
+- 500
+- 600
+date_format: "%Y-%m-%d-%H-%M-%S"
+scan_directory: /mnt/scan
+```
+
+Finally, launch the app.
 
 ```bash
 sudo python3 app.py
 ```
 
-The scan tool defaults to `http://localhost:5000`. Current implementation has
-no authentication, but will be added in the future.
+The scan tool defaults to `http://localhost:5000`.
 
 ## Environment Variables
 

@@ -2,8 +2,17 @@
 set -x
 # set -e
 
-SCAN_DIRECTORY=${SCAN_DIRECTORY:-/mnt/scan}
-PROCESSING_LOCKFILE=/var/lock/.scanlock
+if [ -z "${SCAN_DIRECTORY+x}" ] \
+   || [ -z "${PROCESSING_LOCKFILE+x}" ] \
+   || [ -z "${SCAN_DIRECTORY+x}" ] \
+   || [ -z "${FILENAME+x}" ] \
+   || [ -z "${SOURCE+x}" ] \
+   || [ -z "${RESOLUTION+x}" ] \
+   || [ -z "${MODE+x}" ]; then
+  echo "Missing one or more required environment variables."
+  exit 1
+fi
+
 touch "$PROCESSING_LOCKFILE"
 
 # Acquire lock for scanning and processing
@@ -29,6 +38,8 @@ until ! lsof "stderr.log" >/dev/null 2>&1; do sleep 1s; done
 mv "$FILENAME.ocr.pdf" "$FILENAME.pdf" 2>>stderr.log 1>>stdout.log
 rm image* 2>>stderr.log 1>>stdout.log
 
+popd # FILENAME
+
 # Ensure permissions allow users to access the scans
 chmod -R u+rwX,g+rwX,o+rwX  "$FILENAME"
 
@@ -36,6 +47,5 @@ chmod -R u+rwX,g+rwX,o+rwX  "$FILENAME"
 sleep 15s
 
 exec 4<&- 
-popd # FILENAME
 
 popd # SCAN_DIRECTORY

@@ -1,14 +1,47 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
 import subprocess
 import datetime as dt
 import os
+import yaml
+import logging
+import sys
 
-DEBUG = os.environ.get("DEBUG", False)
-ROOT_PATH = os.environ.get("ROOT_PATH", '/')
-SOURCES = os.environ.get("SOURCES", "ADF Front,ADF Back,ADF Duplex").split(",")
-MODES = os.environ.get("MODES", "Lineart,Halftone,Gray,Color").split(",")
-RESOLUTIONS = os.environ.get("RESOLUTIONS", "50,100,150,200,250,300,350,400,450,500,550,600").split(",")
-DATE_FORMAT = os.environ.get("DATE_FORMAT", "%Y-%m-%d-%H-%M-%S")
+_LOG = logging.getLogger(__name__)
+
+_SEARCH_PATH = [
+    'config.yaml',
+    os.path.join(os.path.expanduser('~'), '.scanpi/config.yaml'),
+    '/etc/scanpi/config.yaml'
+]
+
+CONFIG = None
+for path in _SEARCH_PATH:
+    if os.path.isfile(path):
+        with open(path) as f:
+            try:
+                CONFIG=yaml.safe_load(f)
+                break
+            except yaml.YAMLError as _:
+                _LOG.error(
+                    "Error in configuration file %s.", path,
+                    exc_info=sys.exc_info()
+                )
+                sys.exit(1)
+
+if CONFIG is None:
+    _LOG.error(
+        "No configuration found. "
+        "Place configuration in one of the following paths: %s", 
+        _SEARCH_PATH
+    )
+    sys.exit(1)
+
+# Set debug
+if CONFIG['debug']:
+    _LOG.setLevel(logging.DEBUG)
+
+# An explicit lockfile path isn't required and should default to /var/lock
+PROCESSING_LOCKFILE = CONFIG.get('processing_lockfile', '/var/lock/.scannub')
 
 app = Flask(__name__)
 
@@ -23,7 +56,7 @@ def current_datetime():
         str: Formatted datetime string
     """
     now = dt.datetime.now()
-    return now.strftime(DATE_FORMAT)
+    return now.strftime(CONFIG['date_format'])
 
 def render_root_path(default_date, message=""):
     """Renders the root path with an optional message
@@ -37,12 +70,12 @@ def render_root_path(default_date, message=""):
     """
     return render_template('form.html', 
         default_date=default_date, 
-        resolutions=RESOLUTIONS,
-        sources=SOURCES,
-        modes=MODES,
+        resolutions=CONFIG['resolutions'],
+        sources=CONFIG['sources'],
+        modes=CONFIG['modes'],
         message=message)
 
-@app.route(ROOT_PATH, methods=['GET','POST'])
+@app.route(CONFIG['root_path'], methods=['GET','POST'])
 def root_path():
     """
     Front page renderer that also launches the scanner script. Root path
@@ -64,17 +97,27 @@ def root_path():
             env_vars["MODE"] = mode
             env_vars["RESOLUTION"] = resolution
             env_vars["SOURCE"] = source
+            env_vars["SCAN_DIRECTORY"] = CONFIG['scan_directory']
+            env_vars["PROCESSING_LOCKFILE"] = PROCESSING_LOCKFILE
             
             # Call the scan_adf.sh script with the provided arguments
             subprocess.Popen(['/bin/bash','scan_adf.sh'], env=env_vars)
-            return render_root_path(default_date, message='Scan request submitted successfully!')
+            return render_root_path(
+                default_date, 
+                message='Scan request submitted successfully!'
+            )
         else:
             return render_root_path(default_date)
-    except Exception as _:
-        if DEBUG:
-            raise
+    except Exception as e:
+        _LOG.debug("Error scanning %s.", name, exc_info=sys.exc_info())
+        if CONFIG['debug']:
+            return render_root_path(
+                'Error processing scan %s:\n%s', name, e
+            )
         else:
-            return render_root_path(default_date, 'There was an error. Check the server.')
+            return render_root_path(
+                default_date, 'There was an error. Check the server.'
+            )
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=DEBUG)
+    app.run(host="0.0.0.0", debug=CONFIG['debug'])
