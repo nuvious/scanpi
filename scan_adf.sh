@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -x
+set -x
 # set -e
 
 SCAN_DIRECTORY=${SCAN_DIRECTORY:-/mnt/scan}
@@ -29,12 +29,13 @@ until ! lsof "stderr.log" >/dev/null 2>&1; do sleep 1s; done
 mv "$FILENAME.ocr.pdf" "$FILENAME.pdf" 2>>stderr.log 1>>stdout.log
 rm image* 2>>stderr.log 1>>stdout.log
 
+# Ensure permissions allow users to access the scans
+chmod -R u+rwX,g+rwX,o+rwX  "$FILENAME"
+
 # Give a break between scan jobs of 15 seconds to allow loading a queued job
 sleep 15s
 
 exec 4<&- 
 popd # FILENAME
 
-# Ensure permissions allow users to access the scans
-chmod -R u+rwX,g+rwX,o+rwX  "$FILENAME"
 popd # SCAN_DIRECTORY
