@@ -16,12 +16,12 @@ implementation of authentication, ideally without requiring any registration.
 ## Quickstart
 
 First install flask, scanadf and ocrmypdf. The application needs to run as root
-for `scanadf` so install as the root user.
+for `scanadf` (installed as part of the `sane` package) so install as the root user.
 
 ```bash
 sudo pip3 install Flask
 sudo apt update
-sudo apt install scanadf ocrmypdf -y
+sudo apt install sane ocrmypdf -y
 ```
 
 Next launch the app.
@@ -105,6 +105,22 @@ WantedBy=multi-user.target
 EOF
 # Edit accordingly if desired to add environment variables.
 systemctl enable scanpi --now
+```
+
+## Docker Compose Template
+```
+services:
+  scanpi:
+    container_name: scanpi
+    build: .
+    restart: unless-stopped
+    volumes:
+      - /path/to/output:/mnt/scan
+    # Environment variables can be added below, uncomment and add them if you need them
+    #environment:
+    # - 
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0 # replace this with the actual device (aka your scanner) you want to map
 ```
 
 ## Tested Hardware
