@@ -6,12 +6,14 @@ could be deployed to any system. Designed to give USB scanners or any scanner
 that is supported by [scanadf](https://linux.die.net/man/1/scanadf) a second
 life.
 
-Current implementation does not have authentication. Issue #1 is earmarked for
-implementation of authentication, ideally without requiring any registration.
+A list of supported hardware can be found at the
+[SANE project site](http://www.sane-project.org/sane-mfgs.html).
 
 ## Demo
 
 [![ScanPi Video Demo](http://img.youtube.com/vi/9Ftn02hEa44/0.jpg)](http://www.youtube.com/watch?v=9Ftn02hEa44 "ScanPi Video Demo")
+
+NOTE: Demo video needs updating with authentication example.
 
 ## Quickstart
 
@@ -19,7 +21,7 @@ First install flask, scanadf and ocrmypdf. The application needs to run as root
 for `scanadf` so install as the root user.
 
 ```bash
-sudo pip3 install Flask
+sudo pip3 install -r requirements.txt
 sudo apt update
 sudo apt install scanadf ocrmypdf -y
 ```
@@ -29,17 +31,17 @@ will be launched, `~/.config/scanpi/` of the user that the app will be run
 under, or `/etc/scanpi/`.
 
 ```yaml
+# Date format that is pre-pended to each generated pdf name
+date_format: '%Y-%m-%d-%H-%M-%S'
+# Set true to run in debug with extra debug output (developer use)
 debug: false
-root_path: /
-sources: 
-- ADF Front
-- ADF Back
-- ADF Duplex
+# Scanner modes for the scanner
 modes:
 - Gray
 - Halftone
 - Color
 - Lineart
+# DPI resolutions for the scanner
 resolutions:
 - 100
 - 200
@@ -47,8 +49,17 @@ resolutions:
 - 400
 - 500
 - 600
-date_format: "%Y-%m-%d-%H-%M-%S"
-scan_directory: /mnt/scan
+# Where to save the scanned pdfs
+scan_directory: /mnt/scannub
+# This will be generated on first run but can be set manually if desired
+# secret_key: [some OTP secret]
+# Sources supported by the scanner
+sources:
+- ADF Front
+- ADF Back
+- ADF Duplex
+# Session timeout for users before they have to re-enter an OTP
+session_timeout: 30
 ```
 
 Finally, launch the app.
@@ -59,31 +70,11 @@ sudo python3 app.py
 
 The scan tool defaults to `http://localhost:5000`.
 
-## Environment Variables
-
-Settings are modified through environment variables listed below:
-
-|Name|Desc|Default|
-|-|-|-|
-|DEBUG|Launches flask in debug and raises all exceptions.|False|
-|ROOT_PATH|Root path for scan form endpoint.|'/'|
-|SOURCES|Scanner specific sources as a comma separated string.|"ADF Front,ADF Back,ADF Duplex"|
-|MODES|Scanner specific modes as a comma separated string.|"Lineart,Halftone,Gray,Color"|
-|RESOLUTIONS|Scanner specific resolutions as a comma separated string.|"50,100,150,200,250,300,350,400,450,500,550,600"|
-|DATE_FORMAT|A date format string prepended to file names|"%Y-%m-%d-%H-%M-%S"|
-|SCAN_DIRECTORY|A default directory to put scanned files. Default assumes using some form of network share.|/mnt/scan|
-|PROCESSING_LOCKFILE|Location of the lockfile used to avoid collisions during scan processing.|/var/lock/.scanlock|
-|SCAN_JOB_DELAY|Seconds to wait between scan jobs to allow loading the next job.|15s|
-
-NOTE: It is possible to queue multiple jobs, but order is not guaranteed. If
-queueing multiple jobs use a generic name like 'scan1', 'scan2', etc and rename
-after the fact.
-
 ## Systemd Service Template
 
-Below is an example of a systemd configuration that moves the scan directory
-to `/mnt/smbscandir` and makes the root path `/scan` instead of `/` with the
-project cloned to my home directory.
+Below is an example of a systemd configuration. When deploying, be sure to
+modify the `WorkingDirectory` and `ExecStart` accordingly to point to where
+you have the application cloned to.
 
 ```ini
 [Unit]
@@ -93,8 +84,6 @@ After=network.target
 [Service]
 WorkingDirectory=/home/nuvious/scanpi
 ExecStart=/usr/bin/python3 /home/nuvious/scanpi/app.py
-Environment="SCAN_DIRECTORY=/mnt/smbscandir"
-Environment="ROOT_PATH=/scan"
 Restart=always
 RestartSec=30
 User=root
@@ -105,8 +94,9 @@ WantedBy=multi-user.target
 ```
 
 Below is a copy-paste-ready command one could run that generates a default
-configuration with scanpi cloned to /opt/scanpi and scans are saved to
-`/mnt/scan` and the root path is `/`. Below should be run as root.
+configuration with scanpi cloned to /opt/scanpi. In this configuration, one
+would need to either put the `config.yaml` in `/opt/scanpi`, `/etc/scanpi` or
+in `/root/.config/scanpi`.
 
 ```bash
 set -e # Stop on any error

@@ -1,2 +1,4 @@
 Flask>=3.0.2,<4
 PyYAML>=6.0.2,<7
+pyotp>=2.9.0,3
+qrcode[pil]>=8.0,<9
