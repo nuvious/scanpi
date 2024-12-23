@@ -112,7 +112,7 @@ systemctl enable scanpi --now
 services:
   scanpi:
     container_name: scanpi
-    image: # TODO: Add image here
+    build: .
     restart: unless-stopped
     volumes:
       - /path/to/output:/mnt/scan
