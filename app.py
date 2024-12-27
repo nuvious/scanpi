@@ -89,9 +89,7 @@ def login():
     """
     if request.method == 'POST':
         otp = request.form['otp']
-        otp_now = _TOTP.now()
-        _LOG.debug(f"OTP: {otp} REQUIRED OTP: {otp_now}")
-        if _TOTP.now() == otp:
+        if _TOTP.verify(otp, valid_window=4):
             session['id'] = uuid.uuid4().hex
             _LOG.debug(f"Login successful!")
             return redirect(url_for('root_path'))
